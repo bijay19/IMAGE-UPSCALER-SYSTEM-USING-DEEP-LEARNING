@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Super-Resolution Demo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <div class="container">
+    <h1>Image Super-Resolution</h1>
+    <p class="subtitle">Upload a low-resolution image or upscale a database image.</p>
+
+    <!-- Upload Form -->
+    <form method="POST" enctype="multipart/form-data" class="upload-form">
+      <label class="field">
+        <span>Choose image</span>
+        <input type="file" name="image" accept="image/*" required>
+      </label>
+
+      <label class="field">
+        <span>Choose model</span>
+        <select name="model_choice">
+          {% for m in models_available %}
+            <option value="{{ m }}" {% if chosen_model == m %}selected{% endif %}>
+              {% if m == 'mae' %}MAE (pixel) model{% elif m == 'a005' %}Perceptual (α=0.005){% else %}{{ m }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <button type="submit">Upscale Uploaded Image</button>
+    </form>
+
+    <!-- DB Image Button -->
+    <form action="/db_image" method="POST" style="margin-top:20px;">
+      <button type="submit">Show Database Image Upscaled</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if done %}
+      <div class="results">
+        <div class="result-card">
+          <h2>Low-Resolution</h2>
+          <img src="{{ lr_image }}" alt="LR image">
+          <div class="metrics">
+            <p><strong>Sharpness:</strong> {{ sharp_lr }}</p>
+            <p><strong>Contrast:</strong> {{ contrast_lr }}</p>
+          </div>
+          <a class="download" href="{{ lr_image }}" download>Download LR</a>
+        </div>
+        <div class="result-card">
+          <h2>Super-Resolved</h2>
+          <img src="{{ sr_image }}" alt="SR image">
+          <div class="metrics">
+            <p><strong>Sharpness:</strong> {{ sharp_sr }} (↑{{ sharp_improve }}%)</p>
+            <p><strong>Contrast:</strong> {{ contrast_sr }} (↑{{ contrast_improve }}%)</p>
+          </div>
+          <a class="download" href="{{ sr_image }}" download>Download SR</a>
+        </div>
+      </div>
+
+      <!-- Quality Metrics -->
+      <div class="metrics">
+        <h2>📊 Image Quality Metrics</h2>
+        {% if psnr_val %}
+          <p><strong>PSNR (Peak Signal-to-Noise Ratio):</strong> {{ "%.2f"|format(psnr_val) }} dB</p>
+          <p><strong>SSIM (Structural Similarity Index):</strong> {{ "%.4f"|format(ssim_val) }}</p>
+        {% else %}
+          <p>No reference image available for quality comparison.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>
